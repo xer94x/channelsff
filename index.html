@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📺 Canali Italia</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #1a1a26;
+    --card-hover: #22223a;
+    --border: rgba(255,255,255,0.07);
+    --accent: #e8372a;
+    --accent2: #ff6b35;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --green: #22c55e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; }
+
+  header {
+    background: linear-gradient(135deg,#0e0e16,#14141f);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top:0; z-index:100;
+  }
+  .logo { display:flex; align-items:center; gap:12px; }
+  .logo-icon { width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px; }
+  .logo h1 { font-family:'Bebas Neue',cursive;font-size:24px;letter-spacing:3px;background:linear-gradient(135deg,#fff 30%,var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; }
+  .count-badge { background:var(--card);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:13px;color:var(--muted); }
+  .count-badge strong { color:var(--accent2);font-family:'Bebas Neue',cursive;font-size:16px;letter-spacing:1px;margin-right:4px; }
+
+  .controls {
+    padding:10px 28px; display:flex; gap:10px; align-items:center; flex-wrap:nowrap; overflow:hidden;
+    background:var(--bg); border-bottom:1px solid var(--border);
+    position:sticky; top:67px; z-index:99;
+  }
+  .search-wrap { position:relative; flex:0 0 auto; width:200px; }
+  .search-wrap svg { position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none; }
+  input[type="text"] { width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);padding:10px 12px 10px 38px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s; }
+  input[type="text"]:focus { border-color:var(--accent); }
+
+  .grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+    gap:10px;
+    padding:20px 28px 48px;
+  }
+
+  .channel-card {
+    background:var(--card);border:1px solid var(--border);border-radius:10px;
+    overflow:hidden;cursor:pointer;transition:all .22s ease;
+    text-decoration:none;color:inherit;display:flex;flex-direction:column;
+    animation:fadeIn .3s ease both;
+  }
+  .channel-card:hover {
+    background:var(--card-hover);border-color:rgba(232,55,42,.5);
+    transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 0 1px rgba(232,55,42,.2);
+  }
+
+  .logo-wrap {
+    height:86px;display:flex;align-items:center;justify-content:center;
+    padding:12px;background:#1e1e2e;position:relative;overflow:hidden;
+  }
+  .logo-wrap::before { content:'';position:absolute;inset:0;background:radial-gradient(circle at center,rgba(255,255,255,.04) 0%,transparent 70%);pointer-events:none; }
+  .logo-wrap img { max-width:100%;max-height:58px;object-fit:contain;transition:transform .3s;display:block;position:relative;z-index:1; }
+  .channel-card:hover .logo-wrap img { transform:scale(1.08); }
+
+  .play-overlay {
+    position:absolute;inset:0;background:rgba(232,55,42,.18);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;transition:opacity .2s;z-index:2;
+  }
+  .channel-card:hover .play-overlay { opacity:1; }
+  .play-overlay svg { width:28px;height:28px;color:#fff;filter:drop-shadow(0 2px 8px rgba(0,0,0,.9)); }
+
+  .no-logo {
+    width:54px;height:54px;border-radius:50%;
+    background:linear-gradient(135deg,#2a2a3e,#3a2a3e);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Bebas Neue',cursive;font-size:16px;color:var(--muted);
+    letter-spacing:1px;border:1px solid var(--border);
+  }
+
+  .channel-info { padding:9px 10px 11px; }
+  .channel-num { font-size:10px;font-weight:600;color:var(--accent2);letter-spacing:.5px;margin-bottom:3px; }
+  .channel-name { font-size:12px;font-weight:600;color:var(--text);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .live-row { display:flex;align-items:center;gap:4px;margin-top:5px; }
+  .live-dot { width:5px;height:5px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;flex-shrink:0; }
+  .live-label { font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px; }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  .no-results { grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted); }
+  .no-results p:first-child { font-size:15px;font-weight:600;margin-bottom:6px; }
+
+
+  .filter-chips { display:flex; gap:6px; flex-wrap:nowrap; flex:1; overflow-x:auto; scrollbar-width:none; }
+  .filter-chips::-webkit-scrollbar { display:none; }
+  .chips-arrow {
+    flex:0 0 auto; background:var(--card); border:1px solid var(--border);
+    color:var(--muted); width:26px; height:26px; border-radius:50%;
+    cursor:pointer; font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center;
+    transition:all .2s; padding:0;
+  }
+  .chips-arrow:hover { border-color:var(--accent2); color:var(--accent2); }
+  .chip {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--muted); border-radius: 20px; padding: 5px 14px;
+    font-size: 12px; cursor: pointer; transition: all .2s; white-space: nowrap;
+    font-family:'DM Sans',sans-serif; line-height:1;
+  }
+  .chip:hover { border-color: var(--accent2); color: var(--accent2); }
+  .chip.active { background: rgba(232,55,42,.15); border-color: var(--accent2); color: var(--accent2); }
+  .channel-group-label { font-size:10px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  footer { border-top:1px solid var(--border);padding:20px 28px;text-align:center;color:var(--muted);font-size:12px; }
+
+  @media(max-width:600px){
+    header,.controls{padding:12px 14px;}
+    .grid{padding:12px 14px 30px;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;}
+    .logo h1{font-size:20px;}
+    .controls{top:61px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">📺</div>
+    <h1>Canali Italia</h1>
+  </div>
+  <div class="count-badge"><strong id="visible-count">0</strong> canali</div>
+</header>
+
+<div class="controls">
+  <div class="search-wrap">
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke-linecap="round"/>
+    </svg>
+    <input type="text" id="search" placeholder="Cerca canale…" oninput="render()">
+  </div>
+  <button class="chips-arrow" id="arr-left" onclick="scrollChips(-1)">&#8249;</button>
+  <div class="filter-chips" id="chips"></div>
+  <button class="chips-arrow" id="arr-right" onclick="scrollChips(1)">&#8250;</button>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<footer>📺 Canali Digitale Terrestre &amp; Satellite — Italia · 2026</footer>
+
+<script>
+const channels = [
+  { num:"001", name:"Rai 1",                   logo:"https://i.ibb.co/qMcsYXFB/101-rai-1-it.png",                    group:"Rai", url:"https://viamotionhsi.netplus.ch/live/eds/rai1/browser-HLS8/rai1.m3u8" },
+  { num:"002", name:"Rai 2",                   logo:"https://i.ibb.co/zHZXx5Hw/102-rai-2-it.png",                    group:"Rai", url:"https://viamotionhsi.netplus.ch/live/eds/rai2/browser-HLS8/rai2.m3u8" },
+  { num:"003", name:"Rai 3",                   logo:"https://i.ibb.co/cqKGmMb/103-rai-3-it.png",                     group:"Rai", url:"https://ilglobotv-live.akamaized.net/channels/RAI3/Live.m3u8" },
+  { num:"004", name:"Rete 4",                  logo:"https://i.ibb.co/jk3Fb0W0/104-rete4-it.png",                    group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-r4/r4-clr.isml/index.m3u8" },
+  { num:"005", name:"Canale 5",                logo:"https://i.ibb.co/XfCQpn47/105-canale5-it.png",                  group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-c5/c5-clr.isml/index.m3u8" },
+  { num:"006", name:"Italia 1",                logo:"https://i.ibb.co/Jj0PL8dX/106-italia1-it.png",                  group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-i1/i1-clr.isml/index.m3u8" },
+  { num:"007", name:"LA7",                     logo:"https://i.ibb.co/zy1ywT5/107-la7-it.png",                       group:"Generalista", url:"https://viamotionhsi.netplus.ch/live/eds/la7/browser-HLS8/la7.m3u8" },
+  { num:"008", name:"TV8",                     logo:"https://i.ibb.co/Mx9S1k1H/125-tv8-it.png",                      group:"Sky", url:"https://www.tv8.it/streaming" },
+  { num:"009", name:"NOVE",                    logo:"https://i.ibb.co/jPZ8bzRP/009-nove-it.png",                     group:"Discovery", url:"https://viamotionhsi.netplus.ch/live/eds/nove/browser-HLS8/nove.m3u8" },
+  { num:"010", name:"Rai 4",                   logo:"https://i.ibb.co/gFLmgvx3/010-rai-4-it.png",                    group:"Rai", url:"https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=746966&output=16" },
+  { num:"011", name:"Iris",                    logo:"https://i.ibb.co/21d8kNv4/011-iris-it.png",                     group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-ki/ki-clr.isml/index.m3u8" },
+  { num:"012", name:"La 5",                    logo:"https://i.ibb.co/zhCBwNnx/012-la5-it.png",                      group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-ka/ka-clr.isml/index.m3u8" },
+  { num:"013", name:"Rai 5",                   logo:"https://i.ibb.co/Lh9fVBsy/013-rai-5-it.png",                    group:"Rai", url:"https://www.raiplay.it/dirette/rai5" },
+  { num:"014", name:"Rai Movie",               logo:"https://i.ibb.co/CsTvnR4J/014-rai-movie-it.png",                group:"Rai", url:"https://www.raiplay.it/dirette/raimovie" },
+  { num:"015", name:"Rai Premium",             logo:"https://i.ibb.co/VWthYJvQ/015-rai-premium-it.png",              group:"Rai", url:"https://www.raiplay.it/dirette/raipremium" },
+  { num:"016", name:"Italia 2",                logo:"https://i.ibb.co/4Z0L375W/175-italia2-it.png",                  group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-i2/i2-clr.isml/index.m3u8" },
+  { num:"017", name:"Mediaset Extra",          logo:"https://i.ibb.co/FLbMGYzT/163-mediaset-extra-it.png",           group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-kq/kq-clr.isml/index.m3u8" },
+  { num:"018", name:"TV2000",                  logo:"https://i.ibb.co/rGT01MYQ/tv2000.webp",                         group:"Generalista", url:"https://hls-live-tv2000.akamaized.net/hls/live/2028510/tv2000/master.m3u8" },
+  { num:"019", name:"Cielo",                   logo:"https://i.ibb.co/Pvhzbh95/126-cielo-it.png",                    group:"Sky", url:"https://www.cielotv.it/streaming" },
+  { num:"020", name:"20",                      logo:"https://i.ibb.co/Qw1yVJs/151-20-it.png",                        group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-lb/lb-clr.isml/index.m3u8" },
+  { num:"021", name:"Rai Sport",               logo:"https://i.ibb.co/23VcZNvF/021-rai-sport-it.png",                group:"Rai", url:"https://viamotionhsi.netplus.ch/live/eds/raisport1/browser-HLS8/raisport1.m3u8" },
+  { num:"022", name:"Focus",                   logo:"https://i.ibb.co/chy2kgvM/033-focus-it.png",                    group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-fu/fu-clr.isml/index.m3u8" },
+  { num:"023", name:"Rai Storia",              logo:"https://i.ibb.co/24WHm4Y/023-rai-storia-it.png",                group:"Rai", url:"https://viamotionhsi.netplus.ch/live/eds/raistoria/browser-HLS8/raistoria.m3u8" },
+  { num:"024", name:"Rai News 24",             logo:"https://i.ibb.co/nM1MwpzQ/024-rai-news-24-it.png",              group:"Rai", url:"https://viamotionhsi.netplus.ch/live/eds/rainews/browser-HLS8/rainews.m3u8" },
+  { num:"025", name:"Tgcom24",                 logo:"https://i.ibb.co/4wsbVkC2/025-tgcom24-it.png",                  group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-kf/kf-clr.isml/index.m3u8" },
+  { num:"026", name:"Rai Scuola",              logo:"https://i.ibb.co/zTz3R1qL/026-rai-scuola-it.png",               group:"Rai", url:"https://viamotionhsi.netplus.ch/live/eds/raiscuola/browser-HLS8/raiscuola.m3u8" },
+  { num:"027", name:"27",                      logo:"https://i.ibb.co/hJXr29MC/158-twenty-seven-it.png",             group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-ts/ts-clr.isml/index.m3u8" },
+  { num:"028", name:"DMAX",                    logo:"https://i.ibb.co/XrHwmCcM/dmax.webp",                           group:"Discovery", url:"https://viamotionhsi.netplus.ch/live/eds/dmaxitalia/browser-HLS8/dmaxitalia.m3u8" },
+  { num:"029", name:"La 7 Cinema",             logo:"https://i.ibb.co/0R997DLv/161-la7-cinema-it.png",               group:"Generalista", url:"https://viamotionhsi.netplus.ch/live/eds/la7d/browser-HLS8/la7d.m3u8" },
+  { num:"030", name:"Sky TG24",                logo:"https://i.ibb.co/GGkB6Q0/100-sky-tg24-it.png",                  group:"Sky", url:"https://tg24.sky.it/diretta" },
+  { num:"031", name:"Real Time",               logo:"https://i.ibb.co/3mJW8zXZ/031-real-time-it.png",                group:"Discovery", url:"https://d3562mgijzx0zq.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-kizqtzpvvl3i8/Realtime_IT.m3u8" },
+  { num:"032", name:"QVC",                     logo:"https://i.ibb.co/DPbWK3qY/qvc.webp",                            group:"Generalista", url:"https://qrg.akamaized.net/hls/live/2017383/lsqvc1it/master.m3u8" },
+  { num:"033", name:"Food Network",            logo:"https://i.ibb.co/tMnYd6sM/food-network.webp",                   group:"Discovery", url:"https://dk3okdd5036kz.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-o4pw0nc02sthz/Foodnetwork_IT.m3u8" },
+  { num:"034", name:"Cine34",                  logo:"https://i.ibb.co/C3D9hnf5/034-cine34-it.png",                   group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-b6/b6-clr.isml/index.m3u8" },
+  { num:"035", name:"Discovery",               logo:"https://i.ibb.co/twW2yzWj/discovery.webp",                        group:"Discovery", url:"https://d24aqelmrau4kx.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-l1oas691aj7p2/WBTV_IT.m3u8" },
+  { num:"036", name:"HGTV",                    logo:"https://i.ibb.co/SHtZkcW/homeandgarden.webp",                     group:"Discovery", url:"https://d1tidto9vz737l.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-joaw4f4kh2en1/HGTV_IT.m3u8" },
+  { num:"037", name:"Motor Trend",             logo:"https://i.ibb.co/PzP2JNHF/discoveryturbo.webp",                 group:"Discovery", url:"https://d205m6k582pec4.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-asg5puyzdtnqu/Motortrend_IT.m3u8" },
+  { num:"038", name:"Giallo",                  logo:"https://i.ibb.co/spWmJ86z/038-giallo-it.png",                   group:"Discovery", url:"https://d9fqo6nfqlv2h.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-ulukbrgm1n3yb/Giallo_IT.m3u8" },
+  { num:"039", name:"TopCrime",               logo:"https://i.ibb.co/RkFtcYCr/168-top-crime-it.png",                group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-lt/lt-clr.isml/index.m3u8" },
+  { num:"040", name:"Boing",                   logo:"https://i.ibb.co/KpNs2DtL/040-boing-it.png",                    group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-kb/kb-clr.isml/index.m3u8" },
+  { num:"041", name:"Cartoonito",              logo:"https://i.ibb.co/WN3kfPZH/041-cartoonito-it.png",               group:"Mediaset", url:"https://live02-seg.msf.cdn.mediaset.net/live/ch-la/la-clr.isml/index.m3u8" },
+  { num:"042", name:"Rai Gulp",                logo:"https://i.ibb.co/k2jVpQj7/042-rai-gulp-it.png",                 group:"Rai", url:"https://viamotionhsi.netplus.ch/live/eds/raigulp/browser-HLS8/raigulp.m3u8" },
+  { num:"043", name:"Rai YoYo",                logo:"https://i.ibb.co/bctKkZ8/043-rai-yoyo-it.png",                  group:"Rai", url:"https://www.raiplay.it/dirette/raiyoyo" },
+  { num:"044", name:"Frisbee",                 logo:"https://i.ibb.co/TqkNKv3z/044-frisbee-it.png",                  group:"Discovery", url:"https://d6m7lubks416z.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-zmbstsedxme9s/Frisbee_IT.m3u8" },
+  { num:"045", name:"MAN-GA",                  logo:"https://i.ibb.co/bMSDZDfk/manga.png",                                group:"Kids", url:"https://c65b9e710bde44819015af98e72cd7ab.msvdn.net/live/S93572876/aILSQPYFY3pF/playlist.m3u8" },
+  { num:"046", name:"K2",                      logo:"https://i.ibb.co/5xXFtzPV/046-k2-it.png",                       group:"Discovery", url:"https://d1pmpe0hs35ka5.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-39hsskpppgf72/K2_IT.m3u8" },
+  { num:"047", name:"Super!",                  logo:"https://i.ibb.co/TDgnwjQP/047-super-it.png",                    group:"Kids", url:"https://495c5a85d9074f29acffeaea9e0215eb.msvdn.net/super/super_main/super_main_hbbtv/playlist.m3u8" },
+  { num:"048", name:"Sportitalia Plus",        logo:"https://upload.wikimedia.org/wikipedia/it/thumb/d/de/Sportitalia.svg/200px-Sportitalia.svg.png",                                                             group:"Sport", url:"https://sportsitalia-samsungitaly.amagi.tv/playlist.m3u8" },
+  { num:"049", name:"Travel TV",               logo:"https://i.ibb.co/LqMCRL0/almatv.webp",                            group:"Generalista", url:"https://streaming.softwarecreation.it/GoldTvSat/GoldTvSat/playlist.m3u8" },
+  { num:"050", name:"Donna TV",                logo:"https://i.ibb.co/YFrMm2Zy/166-donna-tv-it.png",                 group:"Generalista", url:"https://streaming.softwarecreation.it/DonnaTv/DonnaTv/playlist.m3u8" },
+  { num:"051", name:"SuperTennis",             logo:"https://i.ibb.co/GfjYBG2s/224-super-tennis-it.png",             group:"Sport", url:"https://live-embed.supertennix.hiway.media/restreamer/supertennix_client/gpu-a-c0-16/restreamer/outgest/aa3673f1-e178-44a9-a947-ef41db73211a/manifest.m3u8" },
+  { num:"052", name:"Alma TV",                 logo:"https://i.ibb.co/LqMCRL0/almatv.webp",                          group:"Generalista", url:"https://streaming.softwarecreation.it/AlmaTv/AlmaTv/playlist.m3u8" },
+  { num:"053", name:"Radio 105 TV",            logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Radio_105_logo.svg/200px-Radio_105_logo.svg.png",                             group:"Mediaset", url:"https://live02-seg.msr.cdn.mediaset.net/live/ch-ec/ec-clr.isml/index.m3u8" },
+  { num:"054", name:"R101 TV",                 logo:"https://i.ibb.co/QjnH9QHN/748-r101-tv-it.png",                  group:"Mediaset", url:"https://live02-seg.msr.cdn.mediaset.net/live/ch-er/er-clr.isml/index.m3u8" },
+  { num:"055", name:"Deejay TV",               logo:"https://i.ibb.co/Qj3Nd2fP/714-deejay-tv-it.png",                group:"Musica", url:"https://4c4b867c89244861ac216426883d1ad0.msvdn.net/live/S85984808/sMO0tz9Sr2Rk/playlist.m3u8" },
+  { num:"056", name:"RadioItalia TV",          logo:"https://i.ibb.co/0jVtmkvB/726-radio-italia-it.png",             group:"Musica", url:"https://radioitaliatv.akamaized.net/hls/live/2093117/RadioitaliaTV/master.m3u8" },
+  { num:"057", name:"Radio KISS KISS TV",      logo:"https://i.ibb.co/B5QnL67K/727-radio-kiss-kiss-tv-it.png",       group:"Musica", url:"https://kk.fluid.stream/KKMulti/smil:KissKissTV.smil/playlist.m3u8" },
+  { num:"058", name:"Rai Radio 2 Visual",      logo:"https://i.ibb.co/0y0rcT5H/602-rai-radio-2-it.png",             group:"Rai", url:"https://www.raiplay.it/dirette/rairadio2" },
+  { num:"059", name:"RTL 102.5",               logo:"https://i.ibb.co/0Vs5Dpmv/736-rtl-1025-it.png",                group:"Musica", url:"https://dd782ed59e2a4e86aabf6fc508674b59.msvdn.net/live/S97044836/tbbP8T1ZRPBL/playlist_video.m3u8" },
+  { num:"060", name:"RTL 102.5 Traffic",       logo:"https://i.ibb.co/0Vs5Dpmv/736-rtl-1025-it.png",                group:"Musica", url:"https://dd782ed59e2a4e86aabf6fc508674b59.msvdn.net/live/S38122967/2lyQRIAAGgRR/playlist.m3u8" },
+  { num:"061", name:"Radio24 / Il Sole 24",    logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/IlSole24Ore_logo.svg/200px-IlSole24Ore_logo.svg.png",                                     group:"Musica", url:"https://ilsole24ore-radiovisual.akamaized.net/hls/live/2035302/persidera/master.m3u8" },
+  { num:"062", name:"BeJoy Kids",              logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png",                                   group:"Kids", url:"https://64b16f23efbee.streamlock.net/bejoy/bejoy/playlist.m3u8" },
+  { num:"063", name:"Gambero Rosso",           logo:"https://i.ibb.co/BV0Xvcg6/133-gambero-rosso-it.png",            group:"Generalista", url:"https://www.dailymotion.com/cdn/live/video/x9us6y4.m3u8?sec=znapDBnGZ4vUPyUrfKmXYA" },
+  { num:"064", name:"RadioFreccia",            logo:"https://i.ibb.co/zWTjDtDv/738-radio-freccia-it.png",            group:"Musica", url:"https://dd782ed59e2a4e86aabf6fc508674b59.msvdn.net/live/S3160845/0tuSetc8UFkF/playlist.m3u8" },
+  { num:"065", name:"RDS Social TV",           logo:"https://i.ibb.co/m5HkCxJS/724-rds-it.png",                      group:"Musica", url:"https://stream.rdstv.radio/index.m3u8" },
+  { num:"066", name:"Radio ZETA",              logo:"https://i.ibb.co/d4Q9n1qk/735-radio-zeta-it.png",               group:"Musica", url:"https://dd782ed59e2a4e86aabf6fc508674b59.msvdn.net/live/S9346184/XEx1LqlYbNic/playlist.m3u8" },
+  { num:"067", name:"Radio TV Serie A",        logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Serie_A_logo_2022.svg/200px-Serie_A_logo_2022.svg.png",                               group:"Musica", url:"https://stream.radioseriea.com/50773f0d0070476a8612d9984c6059d8/index.m3u8" },
+  { num:"068", name:"Sportitalia SoloCalcio",  logo:"https://upload.wikimedia.org/wikipedia/it/thumb/d/de/Sportitalia.svg/200px-Sportitalia.svg.png",                                                             group:"Sport", url:"https://distribution.sportitalialive.it/sportitalia/sisolocalcio_abr/playlist.m3u8" },
+  { num:"069", name:"BIKE Channel",            logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Bikechannel_logo.png/200px-Bikechannel_logo.png",                                                             group:"Sport", url:"https://stream.prod-01.milano.nxmedge.net/argocdn/bikechannel/video.m3u8" },
+  { num:"070", name:"Radio Montecarlo TV",     logo:"https://i.ibb.co/x8sqhS7g/716-radio-monte-carlo-it.png",        group:"Mediaset", url:"https://live02-seg.msr.cdn.mediaset.net/live/ch-bb/bb-clr.isml/index.m3u8" },
+  { num:"071", name:"Virgin Radio TV",         logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Virgin_Radio_Italy_logo.svg/200px-Virgin_Radio_Italy_logo.svg.png",                       group:"Mediaset", url:"https://live02-seg.msr.cdn.mediaset.net/live/ch-ew/ew-clr.isml/index.m3u8" },
+  { num:"072", name:"Senato TV",               logo:"https://i.ibb.co/Fq3ywXcB/512-senato-tv-it.png",                group:"Generalista", url:"https://senato-live.morescreens.com/SENATO_1_001/playlist.m3u8" },
+  { num:"073", name:"Camera dei Deputati",     logo:"https://i.ibb.co/qM2gdxwS/511-camera-dei-deputati-it.png",      group:"Generalista", url:"https://video-ar.radioradicale.it/diretta/camera2/playlist.m3u8" },
+  { num:"074", name:"Rai 4K",                logo:"https://i.ibb.co/qMcsYXFB/101-rai-1-it.png",                     group:"Rai", url:"https://raievent10-elem-live.akamaized.net/hls/live/619189/raievent10/raievent10/playlist.m3u8" },
+  { num:"075", name:"UniNettuno Univ. TV",     logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/UniNettuno_logo.png/200px-UniNettuno_logo.png",                                                             group:"Generalista", url:"https://stream6-rai-it.akamaized.net/live/uninettuno/playlist.m3u8" },
+  { num:"076", name:"RTL 102.5 + Plus",        logo:"https://i.ibb.co/0Vs5Dpmv/736-rtl-1025-it.png",                group:"Musica", url:"https://streamcdng14-dd782ed59e2a4e86aabf6fc508674b59.msvdn.net/live/S82929343/cAcsSu4Wecc5/chunklist_b5256000.m3u8" },
+  { num:"077", name:"Rai Italia (Australia)",  logo:"https://i.ibb.co/qMcsYXFB/101-rai-1-it.png",                    group:"Rai", url:"https://ilglobotv-live.akamaized.net/channels/RAIItaliaAustralia/Live.m3u8" },
+  { num:"078", name:"Rai Italia (Sud Africa)", logo:"https://i.ibb.co/qMcsYXFB/101-rai-1-it.png",                    group:"Rai", url:"https://ilglobotv-live.akamaized.net/channels/RAIItaliaSudAfrica/Live.m3u8" },
+  { num:"079", name:"Rai Italia (Sud America)",logo:"https://i.ibb.co/qMcsYXFB/101-rai-1-it.png",                    group:"Rai", url:"https://ilglobotv-live.akamaized.net/channels/RAIItaliaSudAmerica/Live.m3u8" },
+  { num:"080", name:"Mediaset Italia",         logo:"https://i.ibb.co/XfCQpn47/105-canale5-it.png",                  group:"Mediaset", url:"https://ilglobotv-live.akamaized.net/channels/MediasetItalia/Live.m3u8" },
+  { num:"081", name:"La7 Italia",              logo:"https://i.ibb.co/zy1ywT5/107-la7-it.png",                       group:"Generalista", url:"https://ilglobotv-live.akamaized.net/channels/La7Italia/Live.m3u8" },
+  { num:"082", name:"Rai World Premium",       logo:"https://i.ibb.co/VWthYJvQ/015-rai-premium-it.png",              group:"Rai", url:"https://ilglobotv-live.akamaized.net/channels/RAIPremium/Live.m3u8" },
+  { num:"083", name:"CANALE Italia",           logo:"https://i.ibb.co/BH781YVP/880-canale-italia-it.png",            group:"Generalista", url:"https://viamotionhsi.netplus.ch/live/eds/canaleit/browser-HLS8/canaleit.m3u8" },
+  { num:"084", name:"VIDEO ITALIA HD",         logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/VideoItalia_logo.png/200px-VideoItalia_logo.png",                                                   group:"Generalista", url:"https://viamotionhsi.netplus.ch/live/eds/videoitalia/browser-HLS8/videoitalia.m3u8" },
+  { num:"090", name:"TGR Sicilia",             logo:"https://i.ibb.co/mVpJRKzz/tgr.png",                          group:"Rai", url:"https://www.rainews.it/tgr/sicilia/notiziari" },
+  { num:"091", name:"Pluto TV",               logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png",                         group:"Streaming", url:"https://xer94x.github.io/plutotv/" },
+  { num:"092", name:"Rai Play",               logo:"https://i.ibb.co/jkyLPTrp/raiplay.png",                         group:"Streaming", url:"https://www.raiplay.it/" },
+  { num:"093", name:"Infinity",               logo:"https://i.ibb.co/gxrq5fp/infinity.png",                         group:"Streaming", url:"https://mediasetinfinity.mediaset.it/" },
+  { num:"094", name:"Streaming Community",            logo:"https://i.ibb.co/prhcbD3G/community.png",                         group:"Streaming", url:"https://www.previterapelletteria.it/" },
+  { num:"095", name:"Thisnot",               logo:"https://i.ibb.co/3H5Wkgy/thisnot.png",                         group:"Streaming", url:"https://thisnot.business/index.php" },
+  { num:"096", name:"Fc33",               logo:"https://i.ibb.co/21FDTk87/fc33.png",                         group:"Streaming", url:"https://www.fctv33.one/it" },
+  { num:"097", name:"Platinum Sport",               logo:"https://i.ibb.co/Gv4S7hyX/platinum.png",                         group:"Streaming", url:"https://platinsport.com/" },
+  { num:"098", name:"Livetv",               logo:"https://i.ibb.co/ynR2GHC7/livetv.jpg",                         group:"Streaming", url:"https://livetv.sx/it/" }, 
+  { num:"099", name:"Daddilive",               logo:"https://i.ibb.co/cKZj9yqv/daddy.png",                         group:"Streaming", url:"https://dlstreams.top/" },
+  { num:"101", name:"RSI La 1",               logo:"https://i.ibb.co/Ng0hVMh3/rsi-la1.webp",                         group:"Internazionale", url:"https://viamotionhsi.netplus.ch/live/eds/rsila1hd/browser-HLS8/rsila1hd.m3u8" },
+  { num:"102", name:"RSI La 2",               logo:"https://i.ibb.co/7dRVCWVf/rsi-la2.webp",                         group:"Internazionale", url:"https://viamotionhsi.netplus.ch/live/eds/rsila2hd/browser-HLS8/rsila2hd.m3u8" },
+  { num:"103", name:"RTV",                    logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/San_Marino_RTV_logo.svg/200px-San_Marino_RTV_logo.svg.png",                                                              group:"Internazionale", url:"https://www.sanmarinortv.sm/programmi/web-tv" },
+  { num:"104", name:"RTV Sport",              logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/San_Marino_RTV_logo.svg/200px-San_Marino_RTV_logo.svg.png",                                                              group:"Internazionale", url:"https://www.sanmarinortv.sm/programmi/web-tv-sport" },
+  { num:"108", name:"Sky UNO",                logo:"https://i.ibb.co/HfGrqCwX/108-sky-uno-it.png",                   group:"Sky", url:"https://dlstreams.top/watch.php?id=881" },
+  { num:"112", name:"Sky Serie",              logo:"https://i.ibb.co/bM00GndD/112-sky-serie-it.png",                 group:"Sky", url:"https://dlstreams.top/watch.php?id=880" },
+  { num:"200", name:"Sky Sport 24",           logo:"https://i.ibb.co/KjsLXQpw/200-sky-sport-24-it.png",              group:"Sky", url:"https://dlstreams.top/watch.php?id=869" },
+  { num:"201", name:"Sky Sport UNO",          logo:"https://i.ibb.co/TdjtqJx/201-sky-sport-uno-it.png",              group:"Sky", url:"https://dlstreams.top/watch.php?id=461" },
+  { num:"202", name:"Sky Sport MAX",          logo:"https://i.ibb.co/nqjx0yw5/206-sky-sport-max-it.png",             group:"Sky", url:"https://dlstreams.top/watch.php?id=460" },
+  { num:"203", name:"Sky Sport Calcio",       logo:"https://i.ibb.co/xSzDbc4t/202-sky-sport-calcio-it.png",          group:"Sky", url:"https://dlstreams.top/watch.php?id=870" },
+  { num:"204", name:"Sky Sport F1",           logo:"https://i.ibb.co/20tDZcbD/207-sky-sport-f1-it.png",              group:"Sky", url:"https://dlstreams.top/watch.php?id=577" },
+  { num:"205", name:"Sky Sport MotoGP",       logo:"https://i.ibb.co/LXTpB4ms/208-sky-sport-motogp-it.png",          group:"Sky", url:"hhttps://dlstreams.top/watch.php?id=575" },
+  { num:"206", name:"Sky Sport Tennis",       logo:"https://i.ibb.co/p6zyRkvR/203-sky-sport-tennis-it.png",          group:"Sky", url:"https://dlstreams.top/watch.php?id=576" },
+  { num:"207", name:"Sky Sports Golf",        logo:"https://i.ibb.co/HvC5fbK/209-sky-sport-golf-it.png",             group:"Sky", url:"https://dlstreams.top/watch.php?id=574" },
+  { num:"208", name:"Sky Sport Arena",        logo:"https://i.ibb.co/whBhzVtn/204-sky-sport-arena-it.png",           group:"Sky", url:"https://dlstreams.top/watch.php?id=462" },
+  { num:"209", name:"Sky Sport Basket",       logo:"https://i.ibb.co/R4dWTk14/205-sky-sport-it.png",                 group:"Sky", url:"hhttps://dlstreams.top/watch.php?id=875" },
+  { num:"210", name:"Sky Sport Mix",          logo:"https://i.ibb.co/cXYSBfRP/211-sky-sport-mix-it.png",             group:"Sky", url:"https://www.freeshot.live/live-tv/sky-sport-mix-it/700" },
+  { num:"211", name:"EuroSport 1",            logo:"https://i.ibb.co/994HHVQS/eurosport1.png",                       group:"Sky", url:"https://dlstreams.top/watch.php?id=878" },
+  { num:"212", name:"EuroSport 2",            logo:"https://i.ibb.co/PswYht9n/eurosport-2.png",                      group:"Sky", url:"https://dlstreams.top/watch.php?id=879" },
+  { num:"214", name:"DAZN ZONA",              logo:"https://i.ibb.co/FL150v26/214-zona-dazn-it.png",                 group:"Sky", url:"https://dlstreams.top/watch.php?id=877" },
+  { num:"230", name:"Milan TV",               logo:"https://i.ibb.co/7JjWdcgr/470-milan-tv-it.png",                  group:"Sport", url:"https://www.freeshot.live/live-tv/milan-tv/721" },
+  { num:"231", name:"Juventus Play",          logo:"https://i.ibb.co/DHcjJkY1/juveventusplay.webp",                  group:"Sport", url:"https://amg27604-amg27604c3-amgplt0148.playout.now3.amagi.tv/ts-eu-w1-n2/playlist/amg27604-amg27604c3-amgplt0148/playlist.m3u8" },
+  { num:"232", name:"Inter TV",               logo:"https://i.ibb.co/qYkxLj4b/471-inter-tv-it.png",                  group:"Sport", url:"https://ilglobotv-live.akamaized.net/channels/InterTV/Live.m3u8" },
+  { num:"233", name:"Inter TV 2",             logo:"https://i.ibb.co/qYkxLj4b/471-inter-tv-it.png",                  group:"Sport", url:"https://amg27604-amg27604c2-amgplt0148.playout.now3.amagi.tv/playlist/amg27604-amg27604c2-amgplt0148/playlist.m3u8" },
+  { num:"251", name:"Sky Calcio 1",           logo:"https://i.ibb.co/xSzDbc4t/202-sky-sport-calcio-it.png",          group:"Sky", url:"https://dlstreams.top/watch.php?id=871" },
+  { num:"252", name:"Sky Calcio 2",           logo:"https://i.ibb.co/xSzDbc4t/202-sky-sport-calcio-it.png",          group:"Sky", url:"https://dlstreams.top/watch.php?id=872" },
+  { num:"253", name:"Sky Calcio 3",           logo:"https://i.ibb.co/xSzDbc4t/202-sky-sport-calcio-it.png",          group:"Sky", url:"https://dlstreams.top/watch.php?id=873" },
+  { num:"254", name:"Sky Calcio 4",           logo:"https://i.ibb.co/xSzDbc4t/202-sky-sport-calcio-it.png",          group:"Sky", url:"https://dlstreams.top/watch.php?id=874" },
+  { num:"301", name:"Sky Cinema Uno",         logo:"https://i.ibb.co/233vBPNW/301-sky-cinema-uno-it.png",            group:"Sky", url:"https://dlstreams.top/watch.php?id=860" },
+  { num:"302", name:"Sky Cinema Uno 24",      logo:"https://i.ibb.co/20tBRQy5/310-sky-cinema-uno-plus24-it.png",     group:"Sky", url:"https://dlstreams.top/watch.php?id=863" },
+  { num:"303", name:"Sky Cinema Collection",  logo:"https://i.ibb.co/Pvn17BDm/303-sky-cinema-collection-it.png",     group:"Sky", url:"https://dlstreams.top/watch.php?id=859" },
+  { num:"304", name:"Sky Cinema Action",      logo:"https://i.ibb.co/ds59MFd4/305-sky-cinema-action-it.png",         group:"Sky", url:"https://dlstreams.top/watch.php?id=861" },
+  { num:"305", name:"Sky Cinema Suspense",    logo:"https://i.ibb.co/svrH453R/306-sky-cinema-suspense-it.png",       group:"Sky", url:"https://dlstreams.top/watch.php?id=868" },
+  { num:"306", name:"Sky Cinema Drama",       logo:"https://i.ibb.co/pv7y2gY0/308-sky-cinema-drama-it.png",          group:"Sky", url:"https://dlstreams.top/watch.php?id=867" },
+  { num:"307", name:"Sky Cinema Comedy",      logo:"https://i.ibb.co/9H7Zsrhf/309-sky-cinema-comedy-it.png",         group:"Sky", url:"https://dlstreams.top/watch.php?id=862" },
+  { num:"308", name:"Sky Cinema Romance",     logo:"https://i.ibb.co/sp7tCTJ4/307-sky-cinema-romance-it.png",        group:"Sky", url:"https://dlstreams.top/watch.php?id=864" },
+  { num:"309", name:"Sky Cinema Family",      logo:"https://i.ibb.co/YBW1KNGP/304-sky-cinema-family-it.png",         group:"Sky", url:"https://dlstreams.top/watch.php?id=865" },
+,
+  { num:"400", name:"Baby Shark TV", group:"Kids", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://c0c65b821b3542c3a4dca92702f59944.mediatailor.us-east-1.amazonaws.com/v1/master/04fd913bb278d8775298c26fdca9d9841f37601f/RakutenTV-eu_BabySharkTV/playlist.m3u8" },
+  { num:"401", name:"Bernard L'Orso", group:"Kids", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://daiconnect.com/live/hls/tvup/rk-planetajuniorit/.m3u8" },
+  { num:"402", name:"Car City Adventures", group:"Kids", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/be8e08c2-6876-4398-8756-5b97a9ded71e/5.m3u8" },
+  { num:"403", name:"Family", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://family-rakuten-tv-it.fast.rakuten.tv/v1/manifest/0547f18649bd788bec7b67b746e47670f558b6b2/production-LiveChannel-6215/65dd26bf-21be-4945-b765-839f47373f69/4.m3u8" },
+  { num:"404", name:"Forensic Files", group:"Crime", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/master/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/master.m3u8" },
+  { num:"405", name:"Gambero Rosso", group:"Lifestyle", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg14891-amg14891c3-amgplt0165.playout.now3.amagi.tv/playlist/amg14891-amg14891c3-amgplt0165/playlist.m3u8" },
+  { num:"406", name:"Gusto TV", group:"Lifestyle", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://563f72af.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X0d1c3RvVFZfSExT/playlist.m3u8" },
+  { num:"407", name:"80 Anni 2a Guerra Mondiale", group:"Documentari", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://12c898047ca54008a2014edf2411f165.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/RakutenTV-it_80Anni2aGuerraMondiale/playlist.m3u8" },
+  { num:"408", name:"CGTN Documentary", group:"Documentari", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00405-rakutentv-cgtndocumentary-rakuten-0ql8j.amagi.tv/master.m3u8" },
+  { num:"409", name:"Mayday Air Disaster", group:"Documentari", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg01821-amg01821c38-rakuten-it-10669.playouts.now.amagi.tv/ts-eu-w1-n2/playlist/amg01821-lovetvfast-maydaydisastroaereo-rakutenit/playlist.m3u8" },
+  { num:"410", name:"Nature Time", group:"Documentari", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg01576-amg01576c6-rakuten-it-10716.playouts.now.amagi.tv/ts-eu-w1-n2/playlist/amg01576-blueantmediacanadafast-naturetimeemeaaudioita-rakutenit/playlist.m3u8" },
+  { num:"411", name:"Weather Spy", group:"Documentari", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://beaece44.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X1dlYXRoZXJTcHlfSExT/playlist.m3u8" },
+  { num:"412", name:"WeDo Big Stories ITA", group:"Documentari", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://videosolutions-wedobigstories-rakuten.amagi.tv/hls/amagi_hls_data_rakutenAA-videosolutions-wedobigstories-rakuten/CDN/master.m3u8" },
+  { num:"413", name:"Alberto Sordi e Co", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://253cf8b2.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWl0X1Jpc2F0ZWFsbGl0YWxpYW5hX0hMUw/playlist.m3u8" },
+  { num:"414", name:"Azione", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://action-rakuten-tv-it.fast.rakuten.tv/v1/master/0547f18649bd788bec7b67b746e47670f558b6b2/production-LiveChannel-6067/master.m3u8" },
+  { num:"415", name:"Bizzarro Movies", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://9d597739.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWl0X0JpenphcnJvTW92aWVzX0hMUw/playlist.m3u8" },
+  { num:"416", name:"Brividy Cinema", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://136d462a71e843a886633ffc9d0f9bb2.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/RakutenTV-it_Serially/playlist.m3u8" },
+  { num:"417", name:"CG Grandi Film", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://9a97f2f113334de59d1c4dc093b76280.mediatailor.us-east-1.amazonaws.com/v1/master/f4e8c53a8367a5b58e20ce054ea3ce25a3e904d3/RakutenTV-it_CGtv/playlist.m3u8" },
+  { num:"418", name:"Cinema Italiano", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://fcfbb33e.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWl0X0NpbmVtYVNlZ3JldG8tMV9ITFM/playlist.m3u8" },
+  { num:"419", name:"Cinewestern", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://9466b388.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWl0X1dQLTFfSExT/playlist.m3u8" },
+  { num:"420", name:"Commedia", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://comedy-rakuten-tv-it.fast.rakuten.tv/v1/master/0547f18649bd788bec7b67b746e47670f558b6b2/production-LiveChannel-6184/master.m3u8" },
+  { num:"421", name:"Dark Matter", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/2277e27f-8924-41af-bbb9-aa0de91279ee/5.m3u8" },
+  { num:"422", name:"Dramma", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://drama-rakuten-tv-it.fast.rakuten.tv/v1/master/0547f18649bd788bec7b67b746e47670f558b6b2/production-LiveChannel-6094/master.m3u8" },
+  { num:"423", name:"Fantascienza", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://sci-fi-rakuten-tv-it.fast.rakuten.tv/v1/manifest/0547f18649bd788bec7b67b746e47670f558b6b2/production-LiveChannel-6430/94cab067-8d21-4737-ac66-bccd6bcc9a01/4.m3u8" },
+  { num:"424", name:"Film Asiatici", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://asian-cinema-rakuten-tv-it.fast.rakuten.tv/v1/master/0547f18649bd788bec7b67b746e47670f558b6b2/production-LiveChannel-6431/master.m3u8" },
+  { num:"425", name:"Film Top", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://top-movies-rakuten-tv-it.fast.rakuten.tv/v1/manifest/0547f18649bd788bec7b67b746e47670f558b6b2/production-LiveChannel-5984/aa3002b8-4a4a-426b-a2c7-a6e4c28a3e49/4.m3u8" },
+  { num:"426", name:"Grjngo Film Western", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://30a2c5f3e66e4b208d68c6b61d5db155.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/RakutenTV-it_GrjngoFilmWestern/playlist.m3u8" },
+  { num:"427", name:"Romance", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://romance-rakuten-tv-it.fast.rakuten.tv/v1/manifest/0547f18649bd788bec7b67b746e47670f558b6b2/production-LiveChannel-6193/e5908373-c3c2-4b63-9d81-c19e86f1b805/4.m3u8" },
+  { num:"428", name:"Fail Army", group:"Comedy", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://bd93cfed.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X0ZhaWxBcm15X0hMUw/playlist.m3u8" },
+  { num:"429", name:"People Are Awesome", group:"Comedy", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://3ab76e42.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X1Blb3BsZUFyZUF3ZXNvbWVfSExT/playlist.m3u8" },
+  { num:"430", name:"Revry", group:"Comedy", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://99d8b4b6.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X1JldnJ5X0hMUw/playlist.m3u8" },
+  { num:"431", name:"The Pet Collective", group:"Comedy", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://6ec8627d.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X1RoZVBldENvbGxlY3RpdmVfSExT/playlist.m3u8" },
+  { num:"432", name:"Beauty Channel", group:"Lifestyle", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://4cba2078e4fc412692ab42bc0a6585c5.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/RakutenTV-it_BeautyChannel/playlist.m3u8" },
+  { num:"433", name:"Brindiamo", group:"Lifestyle", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/1e466219-3492-44b6-940e-ed463e40153f/5.m3u8" },
+  { num:"434", name:"Daystar Espaniol", group:"Lifestyle", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00405-amg00405c1-amgplt0165.playout.now3.amagi.tv/smarttv/g32odw73f/playlist_cmaf.m3u8" },
+  { num:"435", name:"Daystar Tv", group:"Lifestyle", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00405-amg00405c2-amgplt0165.playout.now3.amagi.tv/smarttv/64wj6m6d8/playlist_cmaf.m3u8" },
+  { num:"436", name:"Fashiontv", group:"Lifestyle", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg01546-amg01546c1-rakuten-gb-9592.playouts.now.amagi.tv/ts-eu-w1-n2/playlist/amg01546-fashiontv-fashiontv-rakutengb/playlist.m3u8" },
+  { num:"437", name:"Med.tv", group:"Lifestyle", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://med-tv-it.fast.rakuten.tv/v1/manifest/0547f18649bd788bec7b67b746e47670f558b6b2/production-LiveChannel-medtv-1-restreaming/31ccd155-db4a-497d-b6c0-edf59d0a4ec2/0.m3u8" },
+  { num:"438", name:"Moda Tv", group:"Lifestyle", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg14891-amg14891c6-amgplt0148.playout.now3.amagi.tv/ts-eu-w1-n2/playlist/amg14891-amg14891c6-amgplt0148/playlist.m3u8" },
+  { num:"439", name:"Stingray Nature", group:"Documentari", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/3bd68e14-5148-4761-ba3a-de3db33d07ab/3.m3u8" },
+  { num:"440", name:"The Design Network", group:"Lifestyle", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00441-amg00441c1-rakuten-us-6050.playouts.now.amagi.tv/playlist/amg00441-thedesignnetworkllcfast-thedesignnetwork-rakutenus/playlist.m3u8" },
+  { num:"441", name:"Travel XP", group:"Lifestyle", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://27c980761ff9437d929e64647afe183a.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/RakutenTV-eu_TravelXP/playlist.m3u8" },
+  { num:"442", name:"Deluxe Lounge", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d46c0ebf9ef94053848fdd7b1f2f6b90.mediatailor.eu-central-1.amazonaws.com/v1/manifest/81bfcafb76f9c947b24574657a9ce7fe14ad75c0/live-prod/b01aab83-de7f-41f7-8542-d703803e7a9d/0.m3u8" },
+  { num:"443", name:"Metal.Rocks", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00771-amg00771c5-rakuten-gb-9713.playouts.now.amagi.tv/ts-eu-w1-n2/playlist/amg00771-kochfilmsfast-metalrocks-rakutengb/playlist.m3u8" },
+  { num:"444", name:"Qello Concert", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/fa7340dd-2fa2-44e7-84d7-8b2e488a2ee9/3.m3u8" },
+  { num:"445", name:"Qwest Jazz", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://qwestjazz-rakuten.amagi.tv/hls/amagi_hls_data_rakutenAA-qwestjazz-rakuten/CDN/master.m3u8" },
+  { num:"446", name:"Radioitalia Live", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00745-radioitailaspa-radioitalia-rakuten-sucsc.amagi.tv/hls/amagi_hls_data_rakutenAA-radioitalia-rakuten/CDN/1280x720_3440800/chunklist.m3u8" },
+  { num:"447", name:"Stingray Music Greatest Hits", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/ec765dfa-36dc-4be1-ae96-dd91f79a0e24/1.m3u8" },
+  { num:"448", name:"Stingray Music Hit List", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/2b671160-fcc6-4906-bbb6-db2dc36593c2/1.m3u8" },
+  { num:"449", name:"Stingray Music Remember 80s", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/e9ef2109-3de2-4a06-8054-1f5803d44aae/1.m3u8" },
+  { num:"450", name:"That's 70s", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://rakutenaa-lightning-now70s-rakuten-t8535.amagi.tv/playlist/rakutenAA-lightning-now70s-rakuten/playlist.m3u8" },
+  { num:"451", name:"That's 80s", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://rakutenaa-lightning-now80s-rakuten-mkrxt.amagi.tv/playlist/rakutenAA-lightning-now80s-rakuten/playlist.m3u8" },
+  { num:"452", name:"That's 90s00s", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg01076-amg01076c19-rakuten-gb-8653.playouts.now.amagi.tv/playlist/amg01076-lightning-now90s00s-rakutengb/playlist.m3u8" },
+  { num:"453", name:"That's Rock", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://rakutenaa-lightning-now90s-rakuten-2968n.amagi.tv/playlist/rakutenAA-lightning-now90s-rakuten/playlist.m3u8" },
+  { num:"454", name:"Traceurban", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg01131-tracetv-amg01131c1-rakuten-us-1081.playouts.now.amagi.tv/playlist/amg01131-tracetvfast-traceurban-rakutenus/playlist.m3u8" },
+  { num:"455", name:"vevo 90sand00s", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00056-amg00056c12-rakuten-it-3240.playouts.now.amagi.tv/playlist/amg00056-vevotvfast-vevo90sand00sit-rakutenit/playlist.m3u8" },
+  { num:"456", name:"Vevo Pop", group:"Musica", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00056-amg00056c8-rakuten-it-3239.playouts.now.amagi.tv/playlist/amg00056-vevotvfast-vevopopit-rakutenit/playlist.m3u8" },
+  { num:"457", name:"Africanews", group:"News", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://africanews-eng-it.fast.rakuten.tv/v1/manifest/0547f18649bd788bec7b67b746e47670f558b6b2/production-LiveChannel-6576-restreaming/1d1e6082-09d0-49e8-8dd0-c5fe165fe55d/5.m3u8" },
+  { num:"458", name:"Bloomberg Originals", group:"News", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://e96a7526.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X0Jsb29tYmVyZ09yaWdpbmFsc19ITFM/playlist.m3u8" },
+  { num:"459", name:"Bloomberg TV Plus", group:"News", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://86ebec83.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X0Jsb29tYmVyZ1RWUGx1c19ITFM/playlist.m3u8" },
+  { num:"460", name:"Cgtn", group:"News", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00405-rakutentv-cgtn-rakuten-i9tar.amagi.tv/master.m3u8" },
+  { num:"461", name:"Class CNBC", group:"News", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg14891-amg14891c5-amgplt0148.playout.now3.amagi.tv/ts-eu-w1-n2/playlist/amg14891-amg14891c5-amgplt0148/playlist.m3u8" },
+  { num:"462", name:"Euronews", group:"News", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://euronews-live-ita-it.fast.rakuten.tv/v1/manifest/0547f18649bd788bec7b67b746e47670f558b6b2/production-LiveChannel-6570-restreaming/1b594296-d6b9-4ff7-9bd4-871537b16e3d/5.m3u8" },
+  { num:"463", name:"France 24", group:"News", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00106-amg00106c1-rakuten-uk-4654.playouts.now.amagi.tv/playlist/amg00106-france24fast-france24-rakutenuk/playlist.m3u8" },
+  { num:"464", name:"IL sole 24 ore", group:"News", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg14891-amg14891c8-amgplt0165.playout.now3.amagi.tv/ts-eu-w1-n2/playlist/amg14891-amg14891c8-amgplt0165/playlist.m3u8" },
+  { num:"465", name:"Newsworld", group:"News", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg01076-amg01076c23-rakuten-it-8815.playouts.now.amagi.tv/playlist/amg01076-lightning-newsworlditaly-rakutenit/playlist.m3u8" },
+  { num:"466", name:"The Reuters", group:"News", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00453-reuters-amg00453c1-rakuten-uk-2110.playouts.now.amagi.tv/playlist/amg00453-reuters-reuters-rakutenuk/playlist.m3u8" },
+  { num:"467", name:"Filmrise Andromeda", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/3b2db880-b38b-45c1-8070-68f52b253ebb/5.m3u8" },
+  { num:"468", name:"Filmrise Autostop per il cielo", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/4c40f4fc-b7a3-46f7-bb2f-b941cde5eb85/5.m3u8" },
+  { num:"469", name:"Bbc Series", group:"Serie", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00793-amg00793c41-rakuten-it-5445.playouts.now.amagi.tv/playlist/amg00793-bbcstudios-bbcdramaitaly-rakutenit/playlist.m3u8" },
+  { num:"470", name:"Filmrise Sci-fi", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/7ff50711-e94a-4e16-8cf9-e85aa35842fa/5.m3u8" },
+  { num:"471", name:"Guardia Costiera", group:"Documentari", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://86c4bfd09c6044e4b68289bb367f7681.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/RakutenTV-it_GuardiaCostiera/playlist.m3u8" },
+  { num:"472", name:"Mr Bean", group:"Comedy", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00627-amg00627c29-rakuten-it-3989.playouts.now.amagi.tv/playlist/amg00627-banijayfast-mrbeanitcc-rakutenit/playlist.m3u8" },
+  { num:"473", name:"Inazuma Eleven Go", group:"Kids", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://fb48d2109ad543dbba5100bae02bd86f.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/RakutenTV-it_InazumaElevenGo/playlist.m3u8" },
+  { num:"474", name:"Mr Bean Live Action", group:"Comedy", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00627-amg00627c40-rakuten-uk-5725.playouts.now.amagi.tv/playlist/amg00627-banijayfast-mrbeanpopupcc-rakutenuk/playlist.m3u8" },
+  { num:"475", name:"Rakuten Viki", group:"Kids", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://fd18f1cadd404894a31a3362c5f319bd.mediatailor.us-east-1.amazonaws.com/v1/master/04fd913bb278d8775298c26fdca9d9841f37601f/RakutenTV-eu_RakutenViki-1/playlist.m3u8" },
+  { num:"476", name:"Inuyasha", group:"Kids", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg17293-dynit-amg17293c1-rakuten-it-9739.playouts.now.amagi.tv/ts-eu-w1-n2/playlist/amg17293-dynitsrl-bleach-rakutenit/playlist.m3u8" },
+  { num:"477", name:"Filmrise Relc Hunter", group:"Film", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/1469705e-ef21-4794-b563-4dc4c539015c/5.m3u8" },
+  { num:"478", name:"Risate al Sud", group:"Comedy", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://ea65571e3aa748d1a0c2a15a8ab8b07a.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/RakutenTV-it_RisatealSud/playlist.m3u8" },
+  { num:"479", name:"Serially Crime", group:"Serie", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://bb0eae10f3324ced912bfb79fff13245.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/RakutenTV-it_SeriallyCrime/playlist.m3u8" },
+  { num:"480", name:"Serie Crime", group:"Crime", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://crime-rakuten-tv-it.fast.rakuten.tv/v1/manifest/0547f18649bd788bec7b67b746e47670f558b6b2/production-LiveChannel-6216/16c581c2-aee1-46db-88a2-5e33e51a2bfb/4.m3u8" },
+  { num:"481", name:"Soap Latino", group:"Serie", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://2bbff49a727b4b1fad4b7928ca7bb0ed.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/RakutenTV-it_SoapLatino/playlist.m3u8" },
+  { num:"482", name:"Soap Turco", group:"Serie", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://f3fabe7fdead448fa4d41b06c2f56a82.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/RakutenTV-it_SoapTurco/playlist.m3u8" },
+  { num:"483", name:"Squadra Speciale Cobra", group:"Serie", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://alarm-for-cobra-rakuten-tv-it.fast.rakuten.tv/v1/manifest/0547f18649bd788bec7b67b746e47670f558b6b2/production-LiveChannel-7231/8e5fd677-191c-43d4-b488-9e426a661b7f/4.m3u8" },
+  { num:"484", name:"Squadra Speciale Lipsia", group:"Serie", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://4ede4e2e52be4ac280c54ec711b428fd.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/RakutenTV-it_SquadraSpecialeLipsia/playlist.m3u8" },
+  { num:"485", name:"Top Gear", group:"Serie", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00793-amg00793c43-rakuten-it-5537.playouts.now.amagi.tv/playlist/amg00793-bbcstudios-topgearitaly-rakutenit/playlist.m3u8" },
+  { num:"486", name:"Yu-gi-oh", group:"Kids", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg01796-amg01796c17-rakuten-it-7492.playouts.now.amagi.tv/playlist/amg01796-fastmediafast-yugioh3it-rakutenit/playlist.m3u8" },
+  { num:"487", name:"Hell's Kitchen", group:"Serie", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00654-itv-amg00654c20-rakuten-it-3615.playouts.now.amagi.tv/playlist/amg00654-itvstudiosfast-hellskitchenitalyrakuten-rakutenit/playlist.m3u8" },
+  { num:"488", name:"Automoto", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg14891-amg14891c7-amgplt0165.playout.now3.amagi.tv/ts-eu-w1-n2/playlist/amg14891-amg14891c7-amgplt0165/playlist.m3u8" },
+  { num:"489", name:"Fifa+", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://5d95f7d7.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWl0X0ZJRkFQbHVzSXRhbGlhbl9ITFM/playlist.m3u8" },
+  { num:"490", name:"Fuel Tv", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg01074-fueltv-fueltvemeaen-rakuten-b6j62.amagi.tv/hls/amagi_hls_data_rakutenAA-fueltvemeaen/CDN/master.m3u8" },
+  { num:"491", name:"Glory Kickboxing", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://6f972d29.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X0dsb3J5S2lja2JveGluZ19ITFM/playlist.m3u8" },
+  { num:"492", name:"Golf Television", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg14891-amg14891c1-amgplt0165.playout.now3.amagi.tv/playlist/amg14891-amg14891c1-amgplt0165/playlist.m3u8" },
+  { num:"493", name:"Hard Knocks Fight", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/599ade05-a29a-4c22-b5c8-df23c0437186/5.m3u8" },
+  { num:"494", name:"Inter 247", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg27604-amg27604c2-amgplt0148.playout.now3.amagi.tv/playlist/amg27604-amg27604c2-amgplt0148/playlist.m3u8" },
+  { num:"495", name:"Juventus Play", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg27604-amg27604c3-amgplt0148.playout.now3.amagi.tv/ts-eu-w1-n2/playlist/amg27604-amg27604c3-amgplt0148/playlist.m3u8" },
+  { num:"496", name:"Motoretrò", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg14891-amg14891c2-amgplt0165.playout.now3.amagi.tv/playlist/amg14891-amg14891c2-amgplt0165/playlist.m3u8" },
+  { num:"497", name:"motorvision.tv", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/ef711afa-c754-406a-9d6f-43e0e0b5ed9e/4.m3u8" },
+  { num:"498", name:"Pfl Mma", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://a883593c.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X1BGTE1NQV9ITFM/playlist.m3u8" },
+  { num:"499", name:"Racer", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg00378-mavtv-amg00378c2-rakuten-us-1048.playouts.now.amagi.tv/playlist/amg00378-mavtvfast-motorsportsnetwork-rakutenus/playlist.m3u8" },
+  { num:"500", name:"Rally.tv Fast+", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d6a3f626.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWV1X1JhbGx5VFZGQVNUUGx1c19ITFM/playlist.m3u8" },
+  { num:"501", name:"Red Bull TV", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://3ea22335.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/UmFrdXRlblRWLWdiX1JlZEJ1bGxUVl9ITFM/playlist.m3u8" },
+  { num:"502", name:"Sportitalia", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg01370-italiansportcom-sportitalia-rakuten-3hmdb.amagi.tv/hls/amagi_hls_data_rakutenAA-sportitalia-rakuten/CDN/master.m3u8" },
+  { num:"503", name:"Tennis+", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg01935-amg01935c1-amgplt0165.playout.now3.amagi.tv/playlist/amg01935-amg01935c1-amgplt0165/playlist.m3u8" },
+  { num:"504", name:"Top Barca", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://amg17560-fcb-amg17560c1-rakuten-uk-4891.playouts.now.amagi.tv/playlist/amg17560-fcbarcelona-topbarcaenglish-rakutenuk/playlist.m3u8" },
+  { num:"505", name:"Billiards TV", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://9a81dd4ee3884d0dbcacafaf0d81327a.mediatailor.us-east-1.amazonaws.com/v1/master/04fd913bb278d8775298c26fdca9d9841f37601f/RakutenTV-eu_BilliardsTV/playlist.m3u8" },
+  { num:"506", name:"Poker Tour", group:"Sport", logo:"https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Rakuten_Global_Brand_Logo.svg/200px-Rakuten_Global_Brand_Logo.svg.png", url:"https://d39g1vxj2ef6in.cloudfront.net/v1/manifest/3fec3e5cac39a52b2132f9c66c83dae043dc17d4/prod-rakuten-stitched/788a3587-093e-4af9-ab3b-7d7a503046c0/1.m3u8" },
+  // Pluto TV
+  { num:"507", name:"Anime", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/65b90daed77d450008a43345" },
+  { num:"508", name:"Barbie & Friends", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/686cfdf894a028da3aac4252" },
+  { num:"509", name:"Gormiti", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/66a8c64814a2bb00084d09d6" },
+  { num:"510", name:"I Puffi", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/68adb5853efb41cd97ce413d" },
+  { num:"511", name:"Inazuma Eleven", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/612375086abc84000738fc03" },
+  { num:"512", name:"Mattel Junior", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/686cfe983ffa5e0c91cdb5df" },
+  { num:"513", name:"Super Cartoni Animati", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6093f6f8351eb0000754afb8" },
+  { num:"514", name:"Super Kids Classics", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/67f4f99729b03f18cb36647e" },
+  { num:"515", name:"Super Spongebob", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6093f9281db477000759fce0" },
+  { num:"516", name:"Teenage Mutant Ninja Turtles", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/62619405c733e8000732d1fe" },
+  { num:"517", name:"Yu-Gi-Oh", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/63eb82e24e83e70008ab735f" },
+  { num:"518", name:"Failarmy", group:"Comedy", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/608014d19a26320007c92ab6" },
+  { num:"519", name:"I Soliti Idioti", group:"Comedy", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6602acadb2abe500081cf28a" },
+  { num:"520", name:"Just For Laughs Gags", group:"Comedy", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6093f48c95132a00075fd859" },
+  { num:"521", name:"Lol Just For Laughs", group:"Comedy", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/65d7211d0d45610008ffcf92" },
+  { num:"522", name:"Scherzi e Risate", group:"Comedy", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/609404b0a8ec810007d8de9d" },
+  { num:"523", name:"South Park", group:"Comedy", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/62bc1f502b70e3000706298e" },
+  { num:"524", name:"Documentari", group:"Documentari", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/608aa8a5709d6b0007b132fe" },
+  { num:"525", name:"Natura", group:"Documentari", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/60802b37709d6b0007b0c549" },
+  { num:"526", name:"Naturescape", group:"Documentari", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/610a9ebe8c2ac2000734776e" },
+  { num:"527", name:"Storia", group:"Documentari", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/65253fdf3fd33c00080214a3" },
+  { num:"528", name:"16 Anni e Incinta", group:"Reality", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/60940a07d88ba90007b9cb71" },
+  { num:"529", name:"Alice Nevers", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/66d9aa4315d2c60008d4ac40" },
+  { num:"530", name:"Carabinieri", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/66a0eea88561260008b1c5d0" },
+  { num:"531", name:"Cherif", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/66a8c7aefe11e500085b1587" },
+  { num:"532", name:"Geordie Shore", group:"Reality", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/619263ee9541940007d20d60" },
+  { num:"533", name:"Le Sorelle McLeod", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/60a2837f8154ab0007c4dcdf" },
+  { num:"534", name:"Real Life", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/60801976f92a750007a0699c" },
+  { num:"535", name:"Relic Hunter", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/67d9836ba1609bdb523f0c9d" },
+  { num:"536", name:"Settimo Cielo", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6245d3792792150007e20634" },
+  { num:"537", name:"Shore", group:"Reality", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/67e3b0d2443f0671bc8a1297" },
+  { num:"538", name:"Tandem", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/66a8c8b3d2d50d000821fc4c" },
+  { num:"539", name:"Teen Mom", group:"Reality", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/62e7fc8c0d061100083946a9" },
+  { num:"540", name:"Alberto Sordi", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/661f8f01801af800083d9d81" },
+  { num:"541", name:"Christmas Tutto L'Anno", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/612e05b885183d0007958101" },
+  { num:"542", name:"Cinema Italiano", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/608aa7d8359b270007861489" },
+  { num:"543", name:"Cinema Orientale", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6786235bd648bf0008c2780a" },
+  { num:"544", name:"Cinema Poliziottesco", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/671754d8e482950008962aaf" },
+  { num:"545", name:"Cinethriller", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/653660b4295b840008a70ba3" },
+  { num:"546", name:"Dive Italiane", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6875080e3484d607323641f8" },
+  { num:"547", name:"Duri A Morire", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/65f865a62873090008d06382" },
+  { num:"548", name:"Eros", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/66335489307fa300082bd6e4" },
+  { num:"549", name:"Film+", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/608aa17fb9f4490007e6419a" },
+  { num:"550", name:"Film Azione", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/608aa20a2e7f270007c4878d" },
+  { num:"551", name:"Film Commedia", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/608aa512d67fd900072323db" },
+  { num:"552", name:"Film Romantici", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/608aa4a4cc92820007b663af" },
+  { num:"553", name:"Film Storici", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/68750875759366af05a151ce" },
+  { num:"554", name:"Film Thriller", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/608aa5e995132a00075f7005" },
+  { num:"555", name:"Gli Immortali", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6536608b4f123d000876b78b" },
+  { num:"556", name:"Horror", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/61c09e3ac210ed0007606620" },
+  { num:"557", name:"Legami Letali", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/64808a8c536e0c0008a276d1" },
+  { num:"558", name:"Sci-Fi", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/61728bb9ee3773000840c1fa" },
+  { num:"559", name:"Toto", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/65253f9881f942000833ccd5" },
+  { num:"560", name:"Western", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/62e7fb67478a5b0007e6c50c" },
+  { num:"561", name:"Andromeda", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/60802d37ee238e0007c94e64" },
+  { num:"562", name:"Super Teen", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/63eb573ba99571000897135b" },
+  { num:"563", name:"Horror Club", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/66c35c0c92b1af0008c8e83a" },
+  { num:"564", name:"Paranormal", group:"Film", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/66c70033b1a34600087bb09a" },
+  { num:"565", name:"Affare Fatto", group:"Reality", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/64ec5c6644fe100009d114ae" },
+  { num:"566", name:"Catfish", group:"Reality", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6093f9ed2c75660007322bb7" },
+  { num:"567", name:"Il Banco Dei Pugni", group:"Reality", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/60e4507a06171800072339a3" },
+  { num:"568", name:"Il Testimone", group:"Documentari", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/61fbd3f0733df400076c9a2d" },
+  { num:"569", name:"Mayday Disastro Aereo", group:"Documentari", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/690cb9140d121b44ad925ac9" },
+  { num:"570", name:"Wicked Tuna", group:"Documentari", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/67c832cc9b53325ee16fb899" },
+  { num:"571", name:"Cucina", group:"Lifestyle", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/608aa718a8ec810007d87fee" },
+  { num:"572", name:"Extreme Makeover Home Edition", group:"Reality", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6661739641af6400080cd8f1" },
+  { num:"573", name:"Hell's Kitchen", group:"Lifestyle", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/664f0ddbf78a8500092dcffa" },
+  { num:"574", name:"Viaggi", group:"Lifestyle", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/63c923944207be0007fd0887" },
+  { num:"575", name:"Fifa+", group:"Sport", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/660bfc4424e1d000085b5f93" },
+  { num:"576", name:"Modus Super Series Darts", group:"Sport", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/671655b2daad7f00085d202d" },
+  { num:"577", name:"Snooker 900", group:"Sport", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/69148c76e9dec35c9269a16c" },
+  { num:"578", name:"Sport", group:"Sport", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/608030eff4b6f70007e1684c" },
+  { num:"579", name:"Top Gear", group:"Sport", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/64c109a4798def0008a6e03e" },
+  { num:"580", name:"Triton Poker", group:"Sport", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6616a51124e1d00008761a7e" },
+  { num:"581", name:"UFC", group:"Sport", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/679203d4bc03978b9b4b79a6" },
+  { num:"582", name:"World Poker Tour", group:"Sport", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/608016e446d73500075ea7e0" },
+  { num:"583", name:"CBS News 24-7", group:"News", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6231ec4b62cd1f0007093c7b" },
+  { num:"584", name:"CNN Headlines", group:"News", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/66c45ba803e3b20008d8c294" },
+  { num:"585", name:"Euronews", group:"News", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/61b86ea479a4390007c6d5fc" },
+  { num:"586", name:"Notti Di Crimine", group:"Crime", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6911c9b88caba6f046c5ca8f" },
+  { num:"587", name:"Notti Di Passione", group:"Crime", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6911c9704316999535eb21cf" },
+  { num:"588", name:"Notti Di Sangue", group:"Crime", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6911c92b4316999535eb1e08" },
+  { num:"589", name:"Notti Di Terrore", group:"Crime", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6911c8dd8caba6f046c5c5d5" },
+  { num:"590", name:"Donne Protagoniste", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/69709f3331b356840267c41a" },
+  { num:"591", name:"Nina", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/691c5b2e74baa89ef7230baf" },
+  { num:"592", name:"Rally TV", group:"Sport", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/696e0fe49ba4ac18057433ac" },
+  { num:"593", name:"The Intern", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/69664afedcbf5c784492e422" },
+  { num:"594", name:"The Musketeers", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/64fee60130ab3300084d9157" },
+  { num:"595", name:"Sanctuary", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/63eb57d6c111bc0008fe2658" },
+  { num:"596", name:"Serie Sci-Fi", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/61728bb9ee3773000840c1fa" },
+  { num:"597", name:"The Asylum", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/62e8d5369e48940007fc1dc1" },
+  { num:"598", name:"BBC Series", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/62e7fa5ab5062e0007dcf97d" },
+  { num:"599", name:"Mai Dire Si", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6349279ed5023700078f2bc2" },
+  { num:"600", name:"Serie", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/60b9ff2722bfa400072676ef" },
+  { num:"601", name:"Serie+", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/65cb78b83a116800079e2e35" },
+  { num:"602", name:"Cin Cin", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/65cb76ea11ced70008206b66" },
+  { num:"603", name:"Dynasty", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/65cb76723a116800079e1fc3" },
+  { num:"604", name:"Love Boat", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/65cb77853ba51e00084cba02" },
+  { num:"605", name:"Mission Impossible", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/65cb77853ba51e00084cba02" },
+  { num:"606", name:"Renegade", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/634926e4b51d2d00077819a2" },
+  { num:"607", name:"Autostop Per Il Cielo", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/638f286445264d00084ec6dc" },
+  { num:"608", name:"Flashpoint", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/66d7120815d2c60008cec006" },
+  { num:"609", name:"Serie Crime", group:"Crime", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/608aa777b907770007e5d05d" },
+  { num:"610", name:"Squadra Speciale Cobra 11", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/625e6cc905e09f00073addee" },
+  { num:"611", name:"Sulle Tracce Del Crimine", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/66d9a98961dbf00008efb5fc" },
+  { num:"612", name:"Star Trek Voyager", group:"Serie", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/65cb73d33ba51e00084cabad" },
+  { num:"613", name:"Super iCarly", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/609401db8cf51c00084b592e" },
+  { num:"614", name:"Super Pop", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/6093f7b5bb49b90007cecaad" },
+  { num:"615", name:"Teen", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/63eb573ba99571000897135b" },
+  { num:"616", name:"Winx Club", group:"Kids", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/67851bd7d648bf0008c00bc2" },
+  { num:"617", name:"Forensic Files", group:"Crime", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/64ec5cf50f73a800081310a5" },
+  { num:"618", name:"Storie Criminali", group:"Crime", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/66177d18c8311c0008d077d0" },
+  { num:"619", name:"True Crime", group:"Crime", logo:"https://i.ibb.co/Kx6Y7JvN/plutotv.png", url:"https://pluto.tv/it/live-tv/66d9ab4bf0f17500084e9b7e" },
+];
+
+function scrollChips(dir) {
+  document.getElementById('chips').scrollBy({ left: dir * 200, behavior: 'smooth' });
+}
+
+function initials(n){ return n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+
+function render(){
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  let list = channels;
+  if (activeGroup !== 'Tutti') list = list.filter(c => c.group === activeGroup);
+  if (q) list = list.filter(c => c.name.toLowerCase().includes(q) || c.num.includes(q));
+  // shadow list for count - use filtered before text search for group badge
+  const listForCount = list;
+  document.getElementById('visible-count').textContent = list.length;
+
+  if(!list.length){
+    grid.innerHTML='<div class="no-results"><p>Nessun canale trovato</p><p>Prova con un altro termine</p></div>';
+    return;
+  }
+
+  list.forEach((ch, i) => {
+    const a = document.createElement('a');
+    a.className = 'channel-card';
+    a.href = ch.url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.style.animationDelay = Math.min(i*0.012, 0.5)+'s';
+
+    const safeN = ch.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
+    a.innerHTML = `
+      <div class="logo-wrap">
+        ${ch.logo
+          ? `<img src="${ch.logo}" alt="${ch.name}" loading="lazy" onerror="this.onerror=null;this.parentNode.innerHTML='<div class=\\'no-logo\\'>${initials(ch.name)}</div><div class=\\'play-overlay\\'><svg viewBox=\\'0 0 24 24\\' fill=\\'currentColor\\'><path d=\\'M8 5v14l11-7z\\'/></svg></div>'">`
+          : `<div class="no-logo">${initials(ch.name)}</div>`
+        }
+        <div class="play-overlay">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+      </div>
+      <div class="channel-info">
+        <div class="channel-num">${ch.num}</div>
+        <div class="channel-name">${ch.name}</div>
+
+        <div class="live-row"><span class="live-dot"></span><span class="live-label">LIVE</span></div>
+      </div>`;
+    grid.appendChild(a);
+  });
+}
+
+
+// Build filter chips
+const allGroups = ['Tutti', ...new Set(channels.map(c => c.group).filter(Boolean))];
+let activeGroup = 'Tutti';
+(function buildChips(){
+  const el = document.getElementById('chips');
+  allGroups.forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'chip' + (g === 'Tutti' ? ' active' : '');
+    btn.textContent = g;
+    btn.onclick = () => {
+      activeGroup = g;
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    };
+    el.appendChild(btn);
+  });
+})();
+
+render();
+</script>
+</body>
+</html>
+
+</body>
+</html>
